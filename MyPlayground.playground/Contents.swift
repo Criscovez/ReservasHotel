@@ -1,5 +1,8 @@
 import Cocoa
 
+//MARK: - Estructuras - Cliente - Reserva - Errores de reserva
+
+
 struct Client {
     let name: String
     let age: Int
@@ -21,14 +24,17 @@ enum ReservationError: Error {
     case reservationNotFound
 }
 
+//MARK: - Clase HotelReservationManager
+
+
 struct HotelReservationManager {
     private let basePrice = 20
-    var reservations: [Reservation] = []
+     var reservations: [Reservation] = []
     private var reservationIDCounter: Int = 1
     
    mutating func addReservation(clients : [Client], duration: Int, breakfast: Bool) throws -> Reservation {
        
-       for client in clients {
+       for client in clients {  // ciclo que verifica si el cliente ya tiene una reserva
            for reservation in reservations {
                for reservationClient in reservation.clients {
                    if client.name == reservationClient.name {
@@ -38,13 +44,11 @@ struct HotelReservationManager {
            }
         }
        
-       
-       
-       let finalPrice = clients.count * basePrice * duration * (breakfast ? Int(1.25) : 1)
+       let finalPrice = clients.count * basePrice * duration * (breakfast ? Int(1.25) : 1) // cálculo del precio
        
        let newReservation = Reservation(id: reservationIDCounter, hotelName: "Hotel 1", clients: clients, duration: duration, price: Double(finalPrice), breakfast: breakfast)
        
-       if reservations.contains(where: {$0.id == newReservation.id}) {
+       if reservations.contains(where: {$0.id == newReservation.id}) { // verifica que el id sea único
            throw ReservationError.duplicateID
        }
        
@@ -67,7 +71,9 @@ struct HotelReservationManager {
         return reservations
     }
 }
-// Pruebas
+
+//MARK: - Pruebas
+
 
 func testAddReservation() {
     var manager = HotelReservationManager()
@@ -75,14 +81,25 @@ func testAddReservation() {
     let cliente2 = Client(name: "Pedro", age: 40, height: 1.80)
     let cliente3 = Client(name: "Diego", age: 30, height: 1.70)
     
-    // Añade una reserva
- 
+
+    // Añade reserva
     do{
         let reservation1 = try manager.addReservation(clients: [cliente1,cliente2], duration: 3, breakfast: true)
-        let reservation2 = try manager.addReservation(clients: [cliente1], duration: 3, breakfast: true)
+        assert(manager.reservations.count == 1)
+        assert(manager.reservations.first?.id == reservation1.id)
+    } catch {
+        assertionFailure("Reserva no ingresada")
+    }
+    // Reserva Cliente duplicado
+    do{
+        let reservation1 = try manager.addReservation(clients: [cliente1,cliente2], duration: 3, breakfast: true)
+        let reservation2 = try manager.addReservation(clients: [cliente2], duration: 3, breakfast: true)
     } catch {
         print("Error \(error)")
+        //assertionFailure("Esto no debe ocurrir")
     }
+    
+    
 }
 
 func testCancelReservation() {
@@ -90,7 +107,8 @@ func testCancelReservation() {
     let cliente1 = Client(name: "Juan", age: 35, height: 1.90)
     let cliente2 = Client(name: "Pedro", age: 40, height: 1.80)
     let cliente3 = Client(name: "Diego", age: 30, height: 1.70)
-    
+
+  
     do{
         let reservation1 = try manager.addReservation(clients: [cliente1], duration: 3, breakfast: true)
         let reservation2 = try manager.addReservation(clients: [cliente2], duration: 3, breakfast: true)
@@ -98,8 +116,10 @@ func testCancelReservation() {
         try manager.cancelReservation(id: 1)
         
         manager.allReservations()
+        //try manager.cancelReservation(id: 1)
     }catch{
-        print("Error")
+        print("Error \(error)")
+        assertionFailure("Esto no debe ocurrir")
     }
 }
 
@@ -120,7 +140,7 @@ func testReservationPrice() {
         reservation1.price
         reservation2.price
     }catch{
-        assertionFailure("El precio es igual")
+        assertionFailure("Esto no debe ocurrir")
     }
     
     
